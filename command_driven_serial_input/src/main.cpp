@@ -2,9 +2,9 @@
 
 const int LED = 12; // Pin where the led is connected
 
-String cmd = "";      // received command
-bool recv = false;    // Flag to indicate cmd being received
-char buffer[10] = {}; // Buffer to store the received charecters till the complete message arrives
+const int blinkDelay = 1000; // Blink duration for led(1 second)
+
+String cmd = ""; // received command
 
 void led_ctrl(int PIN); // Function to control led
 void cmd_receiver();    // The receiver function
@@ -24,17 +24,46 @@ void loop()
 
 void led_ctrl(int PIN) // Function to control led
 {
-  static String cmd_prev = ""; // variable to store the previous cmd
+  static String cmd_prev = "";   // variable to store the previous cmd
+  static bool led_state = false; // Led state
+
+  // Repetative commands
+  if (cmd == "BLINK") // Led blink command
+  {
+    static unsigned long start_t = 0;
+    if (start_t == 0)
+      start_t = millis(); // Set start time
+
+    if (millis() - start_t > blinkDelay) // Change led state after the delay time
+    {
+      digitalWrite(PIN, led_state ? LOW : HIGH);
+      led_state = !led_state; // Flip led state
+      start_t = 0;            // Reset start time
+    }
+  }
+
+  // Non repetative commands
+  else if (cmd != cmd_prev)
+  {
+    if (cmd == "ON") // Turn on the led
+    {
+      digitalWrite(PIN, HIGH);
+      led_state = true;
+    }
+
+    else if (cmd == "OFF") // Turn off the led
+    {
+      digitalWrite(PIN, LOW);
+      led_state = false;
+    }
+    else
+      Serial.println("INVALID CMD"); // Any other cmd is invalid
+  }
+
   if (cmd != cmd_prev)
   {
     Serial.println(cmd);
-    if (cmd == "ON") // Turn on the led
-      digitalWrite(PIN, HIGH);
-    else if (cmd == "OFF") // Turn off the led
-      digitalWrite(PIN, LOW);
-    else
-      Serial.println("INVALID CMD"); // Any other cmd is invalid
-    cmd_prev = cmd;                  // Assign the current cmd to previou cmd when the next cmd arrives
+    cmd_prev = cmd; // Assign the current cmd to previou cmd when the next cmd arrives
   }
 }
 
@@ -44,6 +73,8 @@ void cmd_receiver() // The receiver function
   if (Serial.available() > 0) // The number of bytes to read must be greater than 0
   {
     cmd_r = Serial.read();            // Assign current bytes varibale
+    static bool recv = false;         // Flag to indicate cmd being received
+    static char buffer[10] = {};      // Buffer to store the received charecters till the complete message arrives
     static int i = 0;                 // Integer for buffer indexing
     if (cmd_r == '#' && recv == true) // Terminate cmd receiving when the end delimeter '#' arrives
     {

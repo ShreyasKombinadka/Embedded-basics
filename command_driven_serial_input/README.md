@@ -19,7 +19,7 @@ Designed to work without blocking delays and to handle both continuous and time-
 - Commands must be enclosed between start and end delimiters.
 - Format: `#COMMAND#`
 
-> **Examples : **
+> Examples : 
 #ON#
 #OFF#
 #BLINK#
